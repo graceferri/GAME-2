@@ -3,151 +3,204 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Colorful Clicker Game with Emojis</title>
+  <title>Run from the Dragon</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       background-color: #f0f0f0;
-      font-family: 'Arial', sans-serif;
-      text-align: center;
-      transition: background-color 0.5s ease;
+      font-family: Arial, sans-serif;
     }
-
-    .game-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      border: 2px solid #fff;
-      padding: 20px;
-      border-radius: 10px;
-      background: rgba(0, 0, 0, 0.5);
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    canvas {
+      background-color: #87CEEB;
+      border: 2px solid #000;
+      display: block;
     }
-
-    .score {
-      font-size: 36px;
-      font-weight: bold;
-      color: white;
-      margin-bottom: 20px;
-    }
-
-    .click-button {
-      padding: 20px 50px;
-      font-size: 24px;
-      background-color: #FF6347;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background-color 0.3s, transform 0.1s;
-    }
-
-    .click-button:hover {
-      background-color: #FF4500;
-      transform: scale(1.1);
-    }
-
-    .click-button:active {
-      background-color: #FF0000;
-      transform: scale(1);
-    }
-
-    .emoji {
-      position: absolute;
+    .game-over {
       font-size: 30px;
-      animation: pop 1s ease-out;
-    }
-
-    @keyframes pop {
-      0% {
-        transform: scale(0);
-        opacity: 1;
-      }
-      50% {
-        transform: scale(1.5);
-        opacity: 1;
-      }
-      100% {
-        transform: scale(1);
-        opacity: 0;
-      }
+      font-weight: bold;
+      color: red;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
   </style>
 </head>
 <body>
 
-  <div class="game-container">
-    <div class="score" id="score">Score: 0</div>
-    <button class="click-button" id="clickButton">Click Me!</button>
-  </div>
+  <canvas id="gameCanvas" width="800" height="300"></canvas>
 
   <script>
-    // Initialize score
+    // Get the canvas and context
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Game variables
+    const gravity = 0.8;
+    const groundHeight = 50;
+    const dinoWidth = 40;
+    const dinoHeight = 60;
+    let dinoX = 50;
+    let dinoY = canvas.height - groundHeight - dinoHeight;
+    let dinoSpeedY = 0;
+    let isJumping = false;
+    let jumpPower = -12;
+
+    let dragonX = canvas.width;
+    const dragonWidth = 100;
+    const dragonHeight = 60;
+
+    const obstacles = [];
+    const obstacleWidth = 20;
+    const obstacleHeight = 40;
+    const obstacleSpeed = 4;
+
     let score = 0;
+    let isGameOver = false;
 
-    // Get elements
-    const scoreDisplay = document.getElementById('score');
-    const clickButton = document.getElementById('clickButton');
-
-    // Emoji list
-    const emojis = ['🦄', '🚀', '🌈', '✨', '💥', '🎉', '🍀', '🌟', '🔥', '🍩'];
-
-    // Function to update the score
-    function updateScore() {
-      score++;
-      scoreDisplay.innerText = `Score: ${score}`;
-
-      // Change the background color randomly
-      changeBackgroundColor();
-
-      // Create a random emoji
-      createRandomEmoji();
+    // Draw Dino
+    function drawDino() {
+      ctx.fillStyle = '#FF6347';
+      ctx.fillRect(dinoX, dinoY, dinoWidth, dinoHeight);
     }
 
-    // Function to change the background color
-    function changeBackgroundColor() {
-      const colors = [
-        '#FF6347', '#FF4500', '#32CD32', '#1E90FF', '#FFD700', '#8A2BE2', '#FF1493', '#00FA9A', '#FF69B4'
-      ];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      document.body.style.backgroundColor = randomColor;
+    // Draw Ground
+    function drawGround() {
+      ctx.fillStyle = '#555';
+      ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
     }
 
-    // Function to create a random emoji at a random position
-    function createRandomEmoji() {
-      const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-      const emojiElement = document.createElement('div');
-      emojiElement.classList.add('emoji');
-      emojiElement.innerText = emoji;
-
-      // Random position for the emoji
-      const randomX = Math.floor(Math.random() * window.innerWidth);
-      const randomY = Math.floor(Math.random() * window.innerHeight);
-
-      emojiElement.style.left = randomX + 'px';
-      emojiElement.style.top = randomY + 'px';
-
-      // Append the emoji to the body
-      document.body.appendChild(emojiElement);
-
-      // Remove the emoji after animation is complete (1 second)
-      setTimeout(() => {
-        emojiElement.remove();
-      }, 1000);
+    // Create Obstacles
+    function createObstacle() {
+      const x = canvas.width;
+      const y = canvas.height - groundHeight - obstacleHeight;
+      obstacles.push({ x, y });
     }
 
-    // Add click event listener to the button
-    clickButton.addEventListener('click', updateScore);
+    // Draw Obstacles
+    function drawObstacles() {
+      ctx.fillStyle = '#8B0000';
+      obstacles.forEach((obstacle, index) => {
+        ctx.fillRect(obstacle.x, obstacle.y, obstacleWidth, obstacleHeight);
+        obstacle.x -= obstacleSpeed;
+
+        // Collision detection with obstacles
+        if (
+          obstacle.x < dinoX + dinoWidth &&
+          obstacle.x + obstacleWidth > dinoX &&
+          obstacle.y < dinoY + dinoHeight &&
+          obstacle.y + obstacleHeight > dinoY
+        ) {
+          gameOver();
+        }
+
+        // Remove obstacles when they go off-screen
+        if (obstacle.x + obstacleWidth < 0) {
+          obstacles.splice(index, 1);
+          score++;
+        }
+      });
+    }
+
+    // Draw Dragon
+    function drawDragon() {
+      ctx.fillStyle = '#228B22';
+      ctx.fillRect(dragonX, canvas.height - groundHeight - dragonHeight, dragonWidth, dragonHeight);
+      dragonX -= obstacleSpeed;
+
+      // Collision detection with the dragon
+      if (
+        dinoX + dinoWidth > dragonX &&
+        dinoX < dragonX + dragonWidth &&
+        dinoY + dinoHeight > canvas.height - groundHeight - dragonHeight
+      ) {
+        gameOver();
+      }
+
+      // Reset the dragon's position when it goes off the screen
+      if (dragonX + dragonWidth < 0) {
+        dragonX = canvas.width;
+      }
+    }
+
+    // Jumping
+    function jump() {
+      if (!isJumping) {
+        isJumping = true;
+        dinoSpeedY = jumpPower;
+      }
+    }
+
+    // Update the Dino's position based on gravity
+    function updateJump() {
+      if (isJumping) {
+        dinoY += dinoSpeedY;
+        dinoSpeedY += gravity;
+
+        if (dinoY >= canvas.height - groundHeight - dinoHeight) {
+          dinoY = canvas.height - groundHeight - dinoHeight;
+          isJumping = false;
+        }
+      }
+    }
+
+    // Update the game state
+    function update() {
+      if (isGameOver) return;
+
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawGround();
+      drawDino();
+      drawDragon();
+      drawObstacles();
+
+      // Update jump mechanics
+      updateJump();
+
+      // Spawn obstacles randomly
+      if (Math.random() < 0.02) {
+        createObstacle();
+      }
+
+      // Display score
+      ctx.font = '20px Arial';
+      ctx.fillStyle = '#333';
+      ctx.fillText('Score: ' + score, 10, 30);
+
+      requestAnimationFrame(update);
+    }
+
+    // Game over function
+    function gameOver() {
+      isGameOver = true;
+      const gameOverText = document.createElement('div');
+      gameOverText.classList.add('game-over');
+      gameOverText.innerText = 'Game Over! Score: ' + score;
+      document.body.appendChild(gameOverText);
+    }
+
+    // Listen for keyboard input (space or up arrow to jump)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'ArrowUp') {
+        jump();
+      }
+    });
+
+    // Start the game loop
+    update();
   </script>
 
 </body>
 </html>
+
+
