@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Colorful Clicker Game</title>
+  <title>Colorful Clicker Game with Emojis</title>
   <style>
     * {
       margin: 0;
@@ -60,6 +60,27 @@
       background-color: #FF0000;
       transform: scale(1);
     }
+
+    .emoji {
+      position: absolute;
+      font-size: 30px;
+      animation: pop 1s ease-out;
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(0);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.5);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -77,6 +98,9 @@
     const scoreDisplay = document.getElementById('score');
     const clickButton = document.getElementById('clickButton');
 
+    // Emoji list
+    const emojis = ['🦄', '🚀', '🌈', '✨', '💥', '🎉', '🍀', '🌟', '🔥', '🍩'];
+
     // Function to update the score
     function updateScore() {
       score++;
@@ -84,6 +108,9 @@
 
       // Change the background color randomly
       changeBackgroundColor();
+
+      // Create a random emoji
+      createRandomEmoji();
     }
 
     // Function to change the background color
@@ -93,6 +120,29 @@
       ];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
       document.body.style.backgroundColor = randomColor;
+    }
+
+    // Function to create a random emoji at a random position
+    function createRandomEmoji() {
+      const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+      const emojiElement = document.createElement('div');
+      emojiElement.classList.add('emoji');
+      emojiElement.innerText = emoji;
+
+      // Random position for the emoji
+      const randomX = Math.floor(Math.random() * window.innerWidth);
+      const randomY = Math.floor(Math.random() * window.innerHeight);
+
+      emojiElement.style.left = randomX + 'px';
+      emojiElement.style.top = randomY + 'px';
+
+      // Append the emoji to the body
+      document.body.appendChild(emojiElement);
+
+      // Remove the emoji after animation is complete (1 second)
+      setTimeout(() => {
+        emojiElement.remove();
+      }, 1000);
     }
 
     // Add click event listener to the button
