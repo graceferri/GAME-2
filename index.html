@@ -3,154 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chrome Dino Game</title>
+  <title>Clicker Game</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     body {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background-color: #f5f5f5;
-      font-family: sans-serif;
+      background-color: #f7f7f7;
+      font-family: Arial, sans-serif;
+      color: #333;
+      text-align: center;
     }
-    canvas {
-      background-color: #f4f4f4;
-      border: 1px solid #000;
+    .game-container {
+      padding: 20px;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      background-color: #fff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .score {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .click-button {
+      padding: 15px 30px;
+      font-size: 18px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .click-button:hover {
+      background-color: #2980b9;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="600" height="150"></canvas>
+
+  <div class="game-container">
+    <div class="score" id="score">Score: 0</div>
+    <button class="click-button" id="clickButton">Click Me!</button>
+  </div>
 
   <script>
-    // Get canvas context
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    // Game settings
-    const gravity = 0.8;
-    const groundHeight = 30;
-    const dinoWidth = 50;
-    const dinoHeight = 50;
-    let dinoX = 50;
-    let dinoY = canvas.height - groundHeight - dinoHeight;
-    let dinoSpeedY = 0;
-    let jumpPower = -12;
-
-    let isJumping = false;
-
-    // Obstacles settings
-    const obstacles = [];
-    const obstacleWidth = 20;
-    const obstacleHeight = 30;
-    const obstacleSpeed = 4;
-
-    // Score settings
     let score = 0;
 
-    // Draw Dino
-    function drawDino() {
-      ctx.fillStyle = '#333';
-      ctx.fillRect(dinoX, dinoY, dinoWidth, dinoHeight);
+    // Get elements
+    const scoreDisplay = document.getElementById('score');
+    const clickButton = document.getElementById('clickButton');
+
+    // Function to update the score
+    function updateScore() {
+      score++;
+      scoreDisplay.innerText = 'Score: ' + score;
     }
 
-    // Draw Ground
-    function drawGround() {
-      ctx.fillStyle = '#555';
-      ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
-    }
-
-    // Create Obstacles
-    function createObstacle() {
-      const x = canvas.width;
-      const y = canvas.height - groundHeight - obstacleHeight;
-      obstacles.push({ x, y });
-    }
-
-    // Draw Obstacles
-    function drawObstacles() {
-      ctx.fillStyle = '#555';
-      obstacles.forEach((obstacle, index) => {
-        ctx.fillRect(obstacle.x, obstacle.y, obstacleWidth, obstacleHeight);
-        obstacle.x -= obstacleSpeed;
-
-        // Collision detection
-        if (
-          obstacle.x < dinoX + dinoWidth &&
-          obstacle.x + obstacleWidth > dinoX &&
-          obstacle.y < dinoY + dinoHeight &&
-          obstacle.y + obstacleHeight > dinoY
-        ) {
-          alert('Game Over! Score: ' + score);
-          resetGame();
-        }
-
-        // Remove obstacles when they go off-screen
-        if (obstacle.x + obstacleWidth < 0) {
-          obstacles.splice(index, 1);
-          score++;
-        }
-      });
-    }
-
-    // Dino Jump
-    function jump() {
-      if (!isJumping) {
-        isJumping = true;
-        dinoSpeedY = jumpPower;
-      }
-    }
-
-    // Game reset
-    function resetGame() {
-      dinoY = canvas.height - groundHeight - dinoHeight;
-      dinoSpeedY = 0;
-      obstacles.length = 0;
-      score = 0;
-    }
-
-    // Update Game
-    function update() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      drawGround();
-      drawDino();
-      drawObstacles();
-
-      // Gravity
-      if (dinoY + dinoHeight < canvas.height - groundHeight) {
-        dinoSpeedY += gravity;
-      } else {
-        dinoSpeedY = 0;
-        dinoY = canvas.height - groundHeight - dinoHeight;
-        isJumping = false;
-      }
-
-      dinoY += dinoSpeedY;
-
-      // Spawn obstacles
-      if (Math.random() < 0.01) {
-        createObstacle();
-      }
-
-      // Score display
-      ctx.fillStyle = '#333';
-      ctx.font = '20px Arial';
-      ctx.fillText('Score: ' + score, 10, 30);
-
-      requestAnimationFrame(update);
-    }
-
-    // Listen for keyboard input (space to jump)
-    window.addEventListener('keydown', (e) => {
-      if (e.key === ' ' || e.key === 'ArrowUp') {
-        jump();
-      }
-    });
-
-    // Start game
-    update();
+    // Add click event listener to the button
+    clickButton.addEventListener('click', updateScore);
   </script>
+
 </body>
 </html>
+
