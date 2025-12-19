@@ -3,74 +3,201 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clicker Game</title>
+  <title>Run from the Dragon</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
+
     body {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background-color: #f7f7f7;
+      background-color: #f0f0f0;
       font-family: Arial, sans-serif;
-      color: #333;
-      text-align: center;
     }
-    .game-container {
-      padding: 20px;
-      border: 2px solid #ccc;
-      border-radius: 10px;
-      background-color: #fff;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    .score {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 20px;
-    }
-    .click-button {
-      padding: 15px 30px;
-      font-size: 18px;
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    .click-button:hover {
-      background-color: #2980b9;
+
+    canvas {
+      background-color: #87CEEB;
+      border: 2px solid #000;
+      display: block;
     }
   </style>
 </head>
 <body>
-
-  <div class="game-container">
-    <div class="score" id="score">Score: 0</div>
-    <button class="click-button" id="clickButton">Click Me!</button>
-  </div>
+  <canvas id="gameCanvas" width="800" height="300"></canvas>
 
   <script>
+    // Game variables
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const groundHeight = 50;
+    const characterWidth = 40;
+    const characterHeight = 60;
+    let characterX = 50;
+    let characterY = canvas.height - groundHeight - characterHeight;
+    let isJumping = false;
+    let jumpSpeed = 0;
+    const gravity = 0.5;
     let score = 0;
 
-    // Get elements
-    const scoreDisplay = document.getElementById('score');
-    const clickButton = document.getElementById('clickButton');
+    // Dragon variables
+    let dragonX = canvas.width;
+    const dragonWidth = 100;
+    const dragonHeight = 50;
 
-    // Function to update the score
-    function updateScore() {
-      score++;
-      scoreDisplay.innerText = 'Score: ' + score;
+    // Obstacle variables
+    const obstacles = [];
+    const obstacleWidth = 20;
+    const obstacleHeight = 40;
+
+    // Game loop settings
+    const speed = 4; // Dragon and obstacle speed
+    let isGameOver = false;
+
+    // Create a new obstacle
+    function createObstacle() {
+      let obstacleX = canvas.width;
+      let obstacleY = canvas.height - groundHeight - obstacleHeight;
+      obstacles.push({ x: obstacleX, y: obstacleY });
     }
 
-    // Add click event listener to the button
-    clickButton.addEventListener('click', updateScore);
-  </script>
+    // Draw the character
+    function drawCharacter() {
+      ctx.fillStyle = "#FF6347"; // Tomato color
+      ctx.fillRect(characterX, characterY, characterWidth, characterHeight);
+    }
 
+    // Draw the dragon
+    function drawDragon() {
+      ctx.fillStyle = "#228B22"; // Forest green for dragon
+      ctx.fillRect(dragonX, canvas.height - groundHeight - dragonHeight, dragonWidth, dragonHeight);
+    }
+
+    // Draw the obstacles
+    function drawObstacles() {
+      ctx.fillStyle = "#8B0000"; // Dark red for obstacles
+      obstacles.forEach(obstacle => {
+        ctx.fillRect(obstacle.x, obstacle.y, obstacleWidth, obstacleHeight);
+      });
+    }
+
+    // Move the obstacles
+    function moveObstacles() {
+      obstacles.forEach(obstacle => {
+        obstacle.x -= speed;
+      });
+      // Remove obstacles that go off the screen
+      obstacles = obstacles.filter(obstacle => obstacle.x + obstacleWidth > 0);
+    }
+
+    // Jumping mechanic
+    function jump() {
+      if (!isJumping) {
+        isJumping = true;
+        jumpSpeed = -15; // jump up
+      }
+    }
+
+    // Update the character position due to gravity
+    function updateJump() {
+      if (isJumping) {
+        characterY += jumpSpeed;
+        jumpSpeed += gravity;
+
+        if (characterY >= canvas.height - groundHeight - characterHeight) {
+          characterY = canvas.height - groundHeight - characterHeight;
+          isJumping = false;
+        }
+      }
+    }
+
+    // Collision detection with obstacles
+    function checkCollision() {
+      for (let i = 0; i < obstacles.length; i++) {
+        let obstacle = obstacles[i];
+        if (
+          characterX + characterWidth > obstacle.x &&
+          characterX < obstacle.x + obstacleWidth &&
+          characterY + characterHeight > obstacle.y
+        ) {
+          gameOver();
+        }
+      }
+    }
+
+    // Collision detection with the dragon
+    function checkDragonCollision() {
+      if (
+        characterX + characterWidth > dragonX &&
+        characterX < dragonX + dragonWidth &&
+        characterY + characterHeight > canvas.height - groundHeight - dragonHeight
+      ) {
+        gameOver();
+      }
+    }
+
+    // Game over function
+    function gameOver() {
+      isGameOver = true;
+      ctx.font = "30px Arial";
+      ctx.fillStyle = "#FF0000";
+      ctx.fillText("Game Over! Score: " + score, canvas.width / 2 - 100, canvas.height / 2);
+    }
+
+    // Update the game state
+    function update() {
+      if (isGameOver) return;
+
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Move and draw dragon
+      dragonX -= speed;
+      if (dragonX + dragonWidth < 0) {
+        dragonX = canvas.width;
+      }
+
+      // Move and draw obstacles
+      moveObstacles();
+      drawObstacles();
+
+      // Check for collision with obstacles and dragon
+      checkCollision();
+      checkDragonCollision();
+
+      // Draw everything
+      drawCharacter();
+      drawDragon();
+
+      // Display score
+      score++;
+      ctx.font = "20px Arial";
+      ctx.fillStyle = "#000000";
+      ctx.fillText("Score: " + score, 10, 30);
+
+      // Update jump physics
+      updateJump();
+
+      // Request next frame
+      requestAnimationFrame(update);
+    }
+
+    // Start the game loop
+    update();
+
+    // Listen for keyboard input
+    window.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'ArrowUp') {
+        jump();
+      }
+    });
+
+    // Spawn obstacles every 2 seconds
+    setInterval(createObstacle, 2000);
+  </script>
 </body>
 </html>
-
